@@ -10,7 +10,7 @@ from login import models
 # Create your views here.
 
 
-@require_http_methods(["GET", "POST"])
+@require_http_methods(["GET"])
 def login(request):
     username = ""
     pwd = ""
