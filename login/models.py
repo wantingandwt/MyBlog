@@ -47,10 +47,10 @@ class Article(models.Model):
     author = models.CharField(max_length=100)
     createtime = models.DateTimeField
     sort = models.ForeignKey(ArticleSort, on_delete=models.CASCADE)
-    cover = models.CharField(max_length=200)
-    summary = models.TextField
+    cover = models.CharField(max_length=200)    # 封面图路径
+    summary = models.TextField      # 概要
     content = models.TextField
-    recommend = models.IntegerField
+    recommend = models.IntegerField     # 是否推荐
     display = models.IntegerField
     watch = models.IntegerField
 
