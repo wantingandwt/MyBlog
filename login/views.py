@@ -4,19 +4,20 @@ from django.views.decorators.http import require_http_methods
 from django.core import serializers
 import requests
 import json
+import datetime
 
 from login import models
 
 # Create your views here.
 
 
-@require_http_methods(["GET"])
+@require_http_methods(["POST"])
 def login(request):
     username = ""
     pwd = ""
-    if request.method == "GET":
-        username = request.GET.get("username")
-        pwd = request.GET.get("pwd")
+    if request.method == "POST":
+        username = request.POST.get("username")
+        pwd = request.POST.get("pwd")
     response = dict()
     response["success"] = "true"
     user = models.UserInfo.objects.filter(username=username, authstr=pwd)
@@ -79,3 +80,31 @@ def get_articles(request):
         result["datas"] = "None"
         response["data"] = result
     return JsonResponse(response)
+
+
+@require_http_methods(["POST"])
+def new_article(request):
+    article = models.Article
+    article.title = request.POST.get("title")
+    article.author = request.POST.get("author")
+    article.createtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    article.sort = int(request.POST.get("sort_id"))
+    article.summary = request.POST.get("summary")
+    article.content = request.POST.get("content")
+    article.recommend = int(request.POST.get("recommend"))
+    article.display = int(request.POST.get("display"))
+    article.watch = 0
+
+    models.Article.objects.create(
+        title=article.title,
+        author=article.author,
+        createtime=article.createtime,
+        sort=article.sort,
+        summary=article.summary,
+        content=article.content,
+        recommend=article.recommend,
+        display=article.display,
+        watch=article.watch
+    )
+
+    return JsonResponse()
