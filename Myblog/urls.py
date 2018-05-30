@@ -22,5 +22,6 @@ urlpatterns = [
     path('login', views.login),
     path('get_article_sort', views.get_article_sort),
     path('get_articles', views.get_articles),
-    path('new_article', views.new_article),
+    path('do_article', views.do_article),
+    path('watch_article', views.watch_article),
 ]

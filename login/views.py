@@ -83,28 +83,49 @@ def get_articles(request):
 
 
 @require_http_methods(["POST"])
-def new_article(request):
+def do_article(request):
+    response = dict()
     article = models.Article
     article.title = request.POST.get("title")
     article.author = request.POST.get("author")
-    article.createtime = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    article.sort = int(request.POST.get("sort_id"))
+    article.sort = int(request.POST.get("sort"))
     article.summary = request.POST.get("summary")
     article.content = request.POST.get("content")
     article.recommend = int(request.POST.get("recommend"))
     article.display = int(request.POST.get("display"))
-    article.watch = 0
 
-    models.Article.objects.create(
+    ret_info = models.Article.objects.update_or_create(
         title=article.title,
         author=article.author,
-        createtime=article.createtime,
-        sort=article.sort,
+        sort_id=article.sort,
         summary=article.summary,
         content=article.content,
         recommend=article.recommend,
         display=article.display,
-        watch=article.watch
     )
 
-    return JsonResponse()
+    response["success"] = "true"
+    if ret_info[1]:
+        result = dict()
+        result["status"] = "true"
+        result["msg"] = "新增成功"
+        response["data"] = result
+    else:
+        result = dict()
+        result["status"] = "false"
+        result["msg"] = "新增失败"
+        response["data"] = result
+    return JsonResponse(response)
+
+
+@require_http_methods(["GET"])
+def watch_article(request):
+    try:
+        article_id = int(request.GET.get("a_id"))
+        watch = models.Article.objects.get(id=article_id).values("watch")
+        watch = watch + 1
+        ret_info = models.Article.objects.filter(id=article_id).update(watch=watch)
+    except Exception:
+        ret_info = "None data"
+    print(ret_info)
+    return ret_info
