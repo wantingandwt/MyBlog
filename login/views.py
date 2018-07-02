@@ -60,12 +60,17 @@ def get_articles(request):
     sort_id = ""
     if request.method == "GET":
         search_string = request.GET.get("search_string")
-        if search_string is not None:
-            print("string" + search_string)
         sort_id = request.GET.get("sort_id")
     response = dict()
     response["success"] = "true"
-    articles = models.Article.objects.filter(sort=sort_id, title__contains=search_string)
+    if search_string is not None and len(search_string) > 0 and sort_id is not None and len(sort_id) > 0:
+        articles = models.Article.objects.filter(sort=sort_id, title__contains=search_string)
+    elif search_string is None and sort_id is not None and len(sort_id) > 0:
+        articles = models.Article.objects.filter(sort=sort_id)
+    elif search_string is not None and len(search_string) > 0 and sort_id is None:
+        articles = models.Article.objects.filter(title__contains=search_string)
+    else:
+        articles = models.Article.objects.all()
     if len(articles) > 0:
         result = dict()
         result["status"] = "true"
@@ -75,7 +80,7 @@ def get_articles(request):
     else:
         result = dict()
         result["status"] = "false"
-        result["msg"] = "为查询到相关文章"
+        result["msg"] = "未查询到相关文章"
         result["datas"] = "None"
         response["data"] = result
     return JsonResponse(response)
