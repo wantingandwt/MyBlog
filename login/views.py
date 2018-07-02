@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from django.http import JsonResponse
+from django.http import JsonResponse,HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.core import serializers
-import requests
 import json
-import datetime
+import os
 
 from login import models
 
@@ -88,11 +87,21 @@ def do_article(request):
     article = models.Article
     article.title = request.POST.get("title")
     article.author = request.POST.get("author")
-    article.sort = int(request.POST.get("sort"))
+    if request.POST.get("sort") is not None:
+        article.sort = int(request.POST.get("sort"))
+    else:
+        article.sort = request.POST.get("sort")
     article.summary = request.POST.get("summary")
     article.content = request.POST.get("content")
-    article.recommend = int(request.POST.get("recommend"))
-    article.display = int(request.POST.get("display"))
+    if request.POST.get("recommend") == "false":
+        article.recommend = 0
+    elif request.POST.get("recommend") == "true":
+        article.recommend = 1
+    if request.POST.get("display") == "false":
+        article.display = 0
+    elif request.POST.get("display") == "true":
+        article.display = 1
+    article.cover = request.POST.get("cover")
 
     ret_info = models.Article.objects.update_or_create(
         title=article.title,
@@ -102,6 +111,7 @@ def do_article(request):
         content=article.content,
         recommend=article.recommend,
         display=article.display,
+        cover=article.cover,
     )
 
     response["success"] = "true"
@@ -120,12 +130,40 @@ def do_article(request):
 
 @require_http_methods(["GET"])
 def watch_article(request):
+    response = dict()
+    response["success"] = "true"
     try:
         article_id = int(request.GET.get("a_id"))
-        watch = models.Article.objects.get(id=article_id).values("watch")
+        watch_set = models.Article.objects.filter(id=article_id).values("watch")
+        watch = watch_set[0]["watch"]
         watch = watch + 1
         ret_info = models.Article.objects.filter(id=article_id).update(watch=watch)
+        response["data"] = ret_info
+        result = dict()
+        result["status"] = "true"
+        result["msg"] = "浏览量增加成功"
+        result["watch"] = ret_info
+        response["data"] = result
     except Exception:
-        ret_info = "None data"
-    print(ret_info)
-    return ret_info
+        result = dict()
+        result["status"] = "false"
+        result["msg"] = "浏览量增加失败"
+        response["data"] = result
+    return JsonResponse(response)
+
+
+@require_http_methods(["POST"])
+def get_upload_file(request):
+    if request.FILES.get("upfile") is not None:
+        upload_file = request.FILES.get("upfile")
+        file_path = "static/"
+        file_path_name = file_path + upload_file.name
+        if not os.path.exists(file_path):
+            os.mkdir(file_path)
+        with open(file_path_name, "wb") as file:
+            for i in upload_file.chunks():
+                file.write(i)
+        response = dict()
+        response["filename"] = file_path_name
+        return JsonResponse(response)
+

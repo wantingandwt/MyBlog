@@ -15,7 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf.urls import url
+from django.conf import settings
+from django.views.static import serve
 from login import views
+
 
 urlpatterns = [
     path('admin', admin.site.urls),
@@ -24,4 +28,6 @@ urlpatterns = [
     path('get_articles', views.get_articles),
     path('do_article', views.do_article),
     path('watch_article', views.watch_article),
+    path('get_upload_file', views.get_upload_file),
+    url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_URL})
 ]
