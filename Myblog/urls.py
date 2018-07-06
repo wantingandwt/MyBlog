@@ -29,5 +29,6 @@ urlpatterns = [
     path('do_article', views.do_article),
     path('watch_article', views.watch_article),
     path('get_upload_file', views.get_upload_file),
-    url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_URL})
+    url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_URL}),
+    path('del_article', views.del_article),
 ]

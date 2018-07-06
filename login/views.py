@@ -58,19 +58,24 @@ def get_article_sort(request):
 def get_articles(request):
     search_string = ""
     sort_id = ""
+    article_id = ""
     if request.method == "GET":
         search_string = request.GET.get("search_string")
         sort_id = request.GET.get("sort_id")
+        article_id = request.GET.get("aid")
     response = dict()
     response["success"] = "true"
-    if search_string is not None and len(search_string) > 0 and sort_id is not None and len(sort_id) > 0:
-        articles = models.Article.objects.filter(sort=sort_id, title__contains=search_string)
-    elif search_string is None and sort_id is not None and len(sort_id) > 0:
-        articles = models.Article.objects.filter(sort=sort_id)
-    elif search_string is not None and len(search_string) > 0 and sort_id is None:
-        articles = models.Article.objects.filter(title__contains=search_string)
+    if article_id is not None and len(article_id) > 0:
+        articles = models.Article.objects.filter(id=article_id)
     else:
-        articles = models.Article.objects.all()
+        if search_string is not None and len(search_string) > 0 and sort_id is not None and len(sort_id) > 0:
+            articles = models.Article.objects.filter(sort=sort_id, title__contains=search_string)
+        elif (search_string is None or len(search_string) <= 0) and sort_id is not None and len(sort_id) > 0:
+            articles = models.Article.objects.filter(sort=sort_id)
+        elif search_string is not None and len(search_string) > 0 and (sort_id is None or len(sort_id) <= 0):
+            articles = models.Article.objects.filter(title__contains=search_string)
+        else:
+            articles = models.Article.objects.all()
     if len(articles) > 0:
         result = dict()
         result["status"] = "true"
@@ -107,30 +112,55 @@ def do_article(request):
     elif request.POST.get("display") == "true":
         article.display = 1
     article.cover = request.POST.get("cover")
-
-    ret_info = models.Article.objects.update_or_create(
-        title=article.title,
-        author=article.author,
-        sort_id=article.sort,
-        summary=article.summary,
-        content=article.content,
-        recommend=article.recommend,
-        display=article.display,
-        cover=article.cover,
-    )
-
-    response["success"] = "true"
-    if ret_info[1]:
-        result = dict()
-        result["status"] = "true"
-        result["msg"] = "新增成功"
-        response["data"] = result
+    article_id = request.POST.get("aid")
+    article.pk = int(article_id)
+    if article_id is None or len(article_id) <= 0:
+        ret_info = models.Article.objects.create(
+            title=article.title,
+            author=article.author,
+            sort_id=article.sort,
+            summary=article.summary,
+            content=article.content,
+            recommend=article.recommend,
+            display=article.display,
+            cover=article.cover,
+        )
+        response["success"] = "true"
+        if ret_info[1]:
+            result = dict()
+            result["status"] = "true"
+            result["msg"] = "操作成功"
+            response["data"] = result
+        else:
+            result = dict()
+            result["status"] = "false"
+            result["msg"] = "操作失败"
+            response["data"] = result
+        return JsonResponse(response)
     else:
-        result = dict()
-        result["status"] = "false"
-        result["msg"] = "新增失败"
-        response["data"] = result
-    return JsonResponse(response)
+        print("into")
+        ret_info = models.Article.objects.filter(id=article.pk).update(
+            title=article.title,
+            author=article.author,
+            sort_id=article.sort,
+            summary=article.summary,
+            content=article.content,
+            recommend=article.recommend,
+            display=article.display,
+            cover=article.cover,
+        )
+        response["success"] = "true"
+        if ret_info > 0:
+            result = dict()
+            result["status"] = "true"
+            result["msg"] = "操作成功"
+            response["data"] = result
+        else:
+            result = dict()
+            result["status"] = "false"
+            result["msg"] = "操作失败"
+            response["data"] = result
+        return JsonResponse(response)
 
 
 @require_http_methods(["GET"])
@@ -172,3 +202,15 @@ def get_upload_file(request):
         response["filename"] = file_path_name
         return JsonResponse(response)
 
+
+@require_http_methods(["GET"])
+def del_article(request):
+    response = dict()
+    response["success"] = "true"
+    article_id = request.GET.get("aid")
+    models.Article.objects.filter(id=article_id).delete()
+    result = dict()
+    result["status"] = "true"
+    result["msg"] = "删除成功"
+    response["data"] = result
+    return JsonResponse(response)
